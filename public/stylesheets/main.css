@@ -10,3 +10,11 @@ width:100%;
 .delete-form{
     display:inline;
 }
+/* Google Maps */
+#map {
+    height: 280px;
+    width: 100%;
+}
+.pad{
+    padding:0;
+}

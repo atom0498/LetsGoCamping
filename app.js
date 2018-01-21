@@ -10,6 +10,7 @@ var express     = require("express"),
     Comment     = require("./models/comment"),
     User        = require("./models/user"),
     seedDB      = require("./seeds");
+    
 
 //requiring routes
 var commentRoutes=require("./routes/comments"),
@@ -21,11 +22,12 @@ mongoose.connect("mongodb://yelp_camp:yelpcamp@ds011314.mlab.com:11314/yelp_camp
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
+
 app.use(express.static(__dirname + "/public"));
 //seedDB(); //seed the database
 app.use(methodOverride("_method"));
 app.use(flash());
-
+app.locals.moment = require('moment');
 // PASSPORT CONFIGURATION
 app.use(require("express-session")({
     secret: "Once again Rusty wins cutest dog!",
