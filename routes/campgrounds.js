@@ -3,6 +3,28 @@ var router=express.Router();
 var Campground=require("../models/campground");
 var middleware=require("../middleware");
 var geocoder = require('geocoder');
+var multer = require('multer');
+var storage = multer.diskStorage({
+  filename: function(req, file, callback) {
+    callback(null, Date.now() + file.originalname);
+  }
+});
+var imageFilter = function (req, file, cb) {
+    // accept image files only
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
+        return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+};
+var upload = multer({ storage: storage, fileFilter: imageFilter});
+
+
+var cloudinary = require('cloudinary');
+cloudinary.config({ 
+  cloud_name: 'dky', 
+  api_key: 636942561773227, 
+  api_secret: "ufwTY55oR-uSs-MnE2WVCQeLUwg"
+});
 //INDEX - show all campgrounds
 
 router.get("/", function(req, res){
@@ -18,21 +40,27 @@ router.get("/", function(req, res){
 
 //CREATE - add new campground to DB
 //CREATE - add new campground to DB
-router.post("/", middleware.isLoggedIn, function(req, res){
+router.post("/", middleware.isLoggedIn, upload.single('image'), function(req, res) {
   // get data from form and add to campgrounds array
-  var name = req.body.name;
-  var image = req.body.image;
-  var desc = req.body.description;
-  var author = {
-      id: req.user._id,
-      username: req.user.username
-  }
-  var price = req.body.price;
+  var image;
+  cloudinary.uploader.upload(req.file.path, function(result) {
+  // add cloudinary url for the image to the campground object under image property
+     image = result.secure_url;
+     console.log(image);
+  
+    var name = req.body.name;
+    var desc = req.body.description;
+    var price=req.body.price;
+    var author = {
+        id: req.user._id,
+        username: req.user.username
+    }
   geocoder.geocode(req.body.location, function (err, data) {
+    
     var lat = data.results[0].geometry.location.lat;
     var lng = data.results[0].geometry.location.lng;
     var location = data.results[0].formatted_address;
-    var newCampground = {name: name, image: image, description: desc, price: price, author:author, location: location, lat: lat, lng: lng};
+    var newCampground = {name: name ,image:result.secure_url,description: desc, price: price, author:author, location: location, lat: lat, lng: lng};
     // Create a new campground and save to DB
     Campground.create(newCampground, function(err, newlyCreated){
         if(err){
@@ -44,6 +72,7 @@ router.post("/", middleware.isLoggedIn, function(req, res){
         }
     });
   });
+});
 });
 //NEW - show form to create new campground
 router.get("/new", middleware.isLoggedIn,function(req, res){
